@@ -39,11 +39,11 @@ Password: 123456789
 หลังจากดาวน์โหลดแล้วให้เปิดไฟล์ .exe และกด Install รอจนติดตั้งเสร็จ
 
 ตรวจสอบการติดตั้งโดยเปิด Command Prompt และพิมพ์
-
+</> Bash
 python --version
 
 หรือ
-
+</> Bash
 py --version
 
 หากติดตั้งสำเร็จจะปรากฏเวอร์ชัน Python
@@ -51,7 +51,7 @@ py --version
 🔹 ส่วนที่ 5: ตรวจสอบ pip
 
 เปิด Command Prompt แล้วพิมพ์
-
+</> Bash
 pip --version
 
 หากมีการแสดงเวอร์ชัน แสดงว่าสามารถใช้งานได้
@@ -65,11 +65,11 @@ pip --version
 เปิด Terminal โดยไปที่เมนู Terminal → New Terminal
 
 ติดตั้งไลบรารีด้วยคำสั่ง
-
+</> Bash
 pip install django mssql-django django-crispy-forms crispy-bootstrap5 openpyxl
 
 หากมีปัญหาให้ใช้
-
+</> Bash
 python -m pip install django mssql-django django-crispy-forms crispy-bootstrap5 openpyxl
 🔹 ส่วนที่ 7: นำเข้าฐานข้อมูล
 
@@ -83,6 +83,51 @@ Password: 123456789
 เลือก Device → กด ... → Add → เลือกไฟล์ LaundryDB.bak จากโฟลเดอร์โปรเจกต์ → กด OK
 
 เมื่อเสร็จแล้วจะเห็นฐานข้อมูล LaundryDB
+🔹ส่วนที่ 8: ตั้งค่า Database ใน Django
+
+ไปที่ไฟล์
+laundry_project/settings.py
+
+แก้ไขค่า DATABASES ให้ตรงกับเครื่องของคุณ
+</> Python
+DATABASES = {
+    'default': {
+        'ENGINE': 'mssql',
+        'NAME': 'LaundryDB',
+        'USER': 'sa',
+        'PASSWORD': '123456789',
+        'HOST': 'DESKTOP-XXXX\\SQLExpress2019',
+        'PORT': '',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+            'extra_params': 'TrustServerCertificate=yes;',
+        },
+    }
+}
+
+หมายเหตุ: เครื่องหมาย \\ ต้องใส่ 2 ตัว และต้องเปลี่ยนชื่อเครื่อง (HOST) ให้ตรงกับเครื่องของตนเอง
+
+🔹 ส่วนที่ 9: เริ่มใช้งานระบบ
+
+เปิด Terminal แล้วพิมพ์คำสั่ง
+</> Bash
+cd laundry_project
+python manage.py runserver
+
+จากนั้นกด Ctrl + Click ที่ลิงก์ที่ปรากฏเพื่อเปิดหน้าเว็บ
+
+🔐 ข้อมูลเข้าสู่ระบบ
+
+Admin
+username: admin
+password: 1234
+
+พนักงาน
+username: staff01 / password: staff01
+username: staff02 / password: staff02
+username: staff03 / password: staff03
+
+เมื่อล็อกอินสำเร็จ ระบบพร้อมใช้งานทันที
 
 ---
 
