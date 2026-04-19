@@ -5,91 +5,83 @@
 ดาวน์โหลดไฟล์จาก
 https://drive.google.com/drive/folders/1irIl3hucADoWOF18coyQ2ZGdMmAnPcH-
 
-หลังจากดาวน์โหลดแล้วให้เปิดไฟล์และเลือก Download Media จากนั้นเลือกประเภทเป็น Express Advanced และกำหนดตำแหน่งติดตั้ง เมื่อดาวน์โหลดเสร็จให้กด Open folder และดับเบิลคลิกไฟล์ที่ได้ จากนั้นกด OK เพื่อแตกไฟล์
+ขั้นตอน
+เปิดไฟล์ → เลือก Download Media
+เลือกประเภท: Express Advanced
+เลือกตำแหน่งติดตั้ง
+เมื่อโหลดเสร็จ → กด Open folder
+ดับเบิลคลิกไฟล์ → กด OK เพื่อแตกไฟล์
+การติดตั้ง
 
-ในขั้นตอนการติดตั้ง ให้เลือก
-New SQL Server stand-alone installation or add features to an existing installation
+เลือก: New SQL Server stand-alone installation
+ติ๊ก ✔️ I accept the license terms → Next
 
-ยอมรับเงื่อนไขโดยติ๊ก I accept the license terms แล้วกด Next ไปเรื่อย ๆ
-
-ในขั้นตอน Feature Selection ให้เอาเครื่องหมายถูกบางตัวออกตามภาพต้นฉบับ (ที่กำหนดไว้)
-
-ตั้งชื่อ Instance เป็น SQLExpress2019
-
-เลือก Authentication Mode เป็น Mixed Mode และตั้งค่า
-
+ตั้งค่า
+Instance Name: SQLExpress2019
+Authentication Mode: Mixed Mode
+Login :
 Username: sa
 Password: 123456789
+➡️ ติดตั้งจนเสร็จ แล้วกด Close
 
-จากนั้นดำเนินการติดตั้งจนเสร็จและกด Close
+🛠️ ส่วนที่ 2: ติดตั้ง SQL Server Management Studio (SSMS)
+ดาวน์โหลดจากลิงก์เดียวกัน
+เปิดไฟล์ติดตั้ง
+กด Install
+รอจนเสร็จ → กด Close
 
-🔹 ส่วนที่ 2: ติดตั้ง SQL Server Management Studio (SSMS 19)
+🔌 ส่วนที่ 3: ติดตั้ง ODBC Driver 17
+ขั้นตอน: Next → Modify → Next → Install → Finish
 
-ดาวน์โหลดจากลิงก์เดียวกัน เปิดไฟล์ติดตั้ง เลือกตำแหน่งที่ต้องการ จากนั้นกด Install และรอจนติดตั้งเสร็จแล้วกด Close
-
-🔹 ส่วนที่ 3: ติดตั้ง ODBC Driver 17
-
-เปิดไฟล์ติดตั้ง จากนั้นกด Next → เลือก Modify → กด Next → กด Install และเมื่อเสร็จแล้วกด Finish
-
-🔹 ส่วนที่ 4: ติดตั้ง Python
-
-เข้าเว็บไซต์ https://www.python.org/downloads/
- และดาวน์โหลด Python เวอร์ชันล่าสุดสำหรับ Windows
-
-หลังจากดาวน์โหลดแล้วให้เปิดไฟล์ .exe และกด Install รอจนติดตั้งเสร็จ
-
-ตรวจสอบการติดตั้งโดยเปิด Command Prompt และพิมพ์
-</> Bash
+🐍 ส่วนที่ 4: ติดตั้ง Python
+🔗 https://www.python.org/downloads/
+ขั้นตอน
+ดาวน์โหลดเวอร์ชันล่าสุด
+เปิดไฟล์ .exe
+กด Install
+ตรวจสอบ
+</>Bash
 python --version
 
-หรือ
-</> Bash
-py --version
-
-หากติดตั้งสำเร็จจะปรากฏเวอร์ชัน Python
-
-🔹 ส่วนที่ 5: ตรวจสอบ pip
-
-เปิด Command Prompt แล้วพิมพ์
-</> Bash
+📦 ส่วนที่ 5: ตรวจสอบ pip
+</>Bash
 pip --version
 
-หากมีการแสดงเวอร์ชัน แสดงว่าสามารถใช้งานได้
-
-🔹 ส่วนที่ 6: ติดตั้งโปรเจกต์
-
-เข้าไปที่ GitHub ของโปรเจกต์ กด Code → Download ZIP จากนั้นแตกไฟล์ ZIP โดยคลิกขวาและเลือก Extract All...
-
-เปิดโปรแกรม Visual Studio Code แล้วเลือก File > Open Folder จากนั้นเลือกโฟลเดอร์โปรเจกต์ที่แตกไฟล์ไว้
-
-เปิด Terminal โดยไปที่เมนู Terminal → New Terminal
-
-ติดตั้งไลบรารีด้วยคำสั่ง
-</> Bash
+💻 ส่วนที่ 6: ติดตั้งโปรเจกต์
+1. ดาวน์โหลดโปรเจกต์
+ไปที่ GitHub กด Code → Download ZIP แตกไฟล์ (Extract All...)
+2. เปิดโปรเจกต์
+เปิด Visual Studio Code ไปที่: File > Open Folder
+3. เปิด Terminal
+Terminal → New Terminal
+4. ติดตั้งไลบรารี
+</>Bash
 pip install django mssql-django django-crispy-forms crispy-bootstrap5 openpyxl
 
-หากมีปัญหาให้ใช้
-</> Bash
+ถ้ามีปัญหา:
+</>Bash
 python -m pip install django mssql-django django-crispy-forms crispy-bootstrap5 openpyxl
-🔹 ส่วนที่ 7: นำเข้าฐานข้อมูล
 
-เปิด SQL Server Management Studio และเข้าสู่ระบบด้วย
+🗄️ ส่วนที่ 7: นำเข้าฐานข้อมูล
+เปิด SQL Server Management Studio
 
+Login:
 Username: sa
 Password: 123456789
+Restore Database
+คลิกขวา Databases
+เลือก Restore Database...
+เลือก: Device → ... → Add
+เลือกไฟล์: LaundryDB.bak
+กด OK
+✅ จะเห็นฐานข้อมูล LaundryDB
 
-จากนั้นคลิกขวาที่ Databases เลือก Restore Database...
+⚙️ ส่วนที่ 8: ตั้งค่า Database ใน Django
 
-เลือก Device → กด ... → Add → เลือกไฟล์ LaundryDB.bak จากโฟลเดอร์โปรเจกต์ → กด OK
+ไปที่ไฟล์: laundry_project/settings.py
 
-เมื่อเสร็จแล้วจะเห็นฐานข้อมูล LaundryDB
-🔹ส่วนที่ 8: ตั้งค่า Database ใน Django
+แก้ไข:
 
-ไปที่ไฟล์
-laundry_project/settings.py
-
-แก้ไขค่า DATABASES ให้ตรงกับเครื่องของคุณ
-</> Python
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',
@@ -105,30 +97,21 @@ DATABASES = {
     }
 }
 
-หมายเหตุ: เครื่องหมาย \\ ต้องใส่ 2 ตัว และต้องเปลี่ยนชื่อเครื่อง (HOST) ให้ตรงกับเครื่องของตนเอง
+⚠️ หมายเหตุ: \\ ต้องใส่ 2 ตัว, เปลี่ยน HOST ให้ตรงกับเครื่องของคุณ
 
-🔹 ส่วนที่ 9: เริ่มใช้งานระบบ
-
-เปิด Terminal แล้วพิมพ์คำสั่ง
-</> Bash
+🚀 ส่วนที่ 9: เริ่มใช้งานระบบ
 cd laundry_project
 python manage.py runserver
 
-จากนั้นกด Ctrl + Click ที่ลิงก์ที่ปรากฏเพื่อเปิดหน้าเว็บ
+👉 กด Ctrl + Click ที่ลิงก์เพื่อเปิดเว็บ
 
 🔐 ข้อมูลเข้าสู่ระบบ
-
-Admin
+👑 Admin
 username: admin
 password: 1234
 
-พนักงาน
-username: staff01 / password: staff01
-username: staff02 / password: staff02
-username: staff03 / password: staff03
-
-เมื่อล็อกอินสำเร็จ ระบบพร้อมใช้งานทันที
-
+เมื่อล็อกอินสำเร็จ ระบบพร้อมใช้งานทันที 🎉
+✅ พร้อมใช้งาน
 ---
 
 
