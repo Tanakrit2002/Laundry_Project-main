@@ -24,30 +24,30 @@ Username: sa
 Password: 123456789
 ➡️ ติดตั้งจนเสร็จ แล้วกด Close
 
-🛠️ ส่วนที่ 2: ติดตั้ง SQL Server Management Studio (SSMS)
+## 🛠️ ส่วนที่ 2: ติดตั้ง SQL Server Management Studio (SSMS)
 ดาวน์โหลดจากลิงก์เดียวกัน
 เปิดไฟล์ติดตั้ง
 กด Install
 รอจนเสร็จ → กด Close
 
-🔌 ส่วนที่ 3: ติดตั้ง ODBC Driver 17
+## 🔌 ส่วนที่ 3: ติดตั้ง ODBC Driver 17
 ขั้นตอน: Next → Modify → Next → Install → Finish
 
-🐍 ส่วนที่ 4: ติดตั้ง Python
+## 🐍 ส่วนที่ 4: ติดตั้ง Python
 🔗 https://www.python.org/downloads/
 ขั้นตอน
 ดาวน์โหลดเวอร์ชันล่าสุด
 เปิดไฟล์ .exe
 กด Install
 ตรวจสอบ
-</>Bash
+```Bash
 python --version
-
-📦 ส่วนที่ 5: ตรวจสอบ pip
-</>Bash
+```
+## 📦 ส่วนที่ 5: ตรวจสอบ pip
+```Bash
 pip --version
-
-💻 ส่วนที่ 6: ติดตั้งโปรเจกต์
+```
+## 💻 ส่วนที่ 6: ติดตั้งโปรเจกต์
 1. ดาวน์โหลดโปรเจกต์
 ไปที่ GitHub กด Code → Download ZIP แตกไฟล์ (Extract All...)
 2. เปิดโปรเจกต์
@@ -55,14 +55,14 @@ pip --version
 3. เปิด Terminal
 Terminal → New Terminal
 4. ติดตั้งไลบรารี
-</>Bash
+```Bash
 pip install django mssql-django django-crispy-forms crispy-bootstrap5 openpyxl
-
+```
 ถ้ามีปัญหา:
-</>Bash
+```Bash
 python -m pip install django mssql-django django-crispy-forms crispy-bootstrap5 openpyxl
-
-🗄️ ส่วนที่ 7: นำเข้าฐานข้อมูล
+```
+## 🗄️ ส่วนที่ 7: นำเข้าฐานข้อมูล
 เปิด SQL Server Management Studio
 
 Login:
@@ -76,12 +76,13 @@ Restore Database
 กด OK
 ✅ จะเห็นฐานข้อมูล LaundryDB
 
-⚙️ ส่วนที่ 8: ตั้งค่า Database ใน Django
+## ⚙️ ส่วนที่ 8: ตั้งค่า Database ใน Django
 
 ไปที่ไฟล์: laundry_project/settings.py
 
 แก้ไข:
 
+```python
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',
@@ -96,10 +97,11 @@ DATABASES = {
         },
     }
 }
+```
 
 ⚠️ หมายเหตุ: \\ ต้องใส่ 2 ตัว, เปลี่ยน HOST ให้ตรงกับเครื่องของคุณ
 
-🚀 ส่วนที่ 9: เริ่มใช้งานระบบ
+## 🚀 ส่วนที่ 9: เริ่มใช้งานระบบ
 cd laundry_project
 python manage.py runserver
 
