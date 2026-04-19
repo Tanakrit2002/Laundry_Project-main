@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-semibold text-dark">
+        <i class="fa-solid fa-phone-volume text-success me-2"></i> ติดต่อลูกค้ารับผ้า (Pickup List)
+    </h3>
+    <span class="badge bg-success text-white px-3 py-2 rounded-pill shadow-sm">
+        <i class="fa-solid fa-check-double me-1"></i> ข้อมูลจาก SQL View : vw_PickupList
+    </span>
+</div>
+
+<div class="card shadow-sm border-0 mb-4 overflow-hidden rounded-4">
+    <div class="bg-light p-3 border-bottom">
+        <div class="row g-2 align-items-end">
+            <div class="col-12 col-sm-6 col-lg-2">
+                <label class="form-label small text-muted fw-bold mb-1">รหัสบิล</label>
+                <input type="text" id="filterBill" class="form-control form-control-sm" placeholder="ค้นหารหัส...">
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <label class="form-label small text-muted fw-bold mb-1">ชื่อลูกค้า</label>
+                <input type="text" id="filterCustomer" class="form-control form-control-sm" placeholder="ค้นหาชื่อ...">
+            </div>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <label class="form-label small text-muted fw-bold mb-1">ที่อยู่</label>
+                <input type="text" id="filterAddress" class="form-control form-control-sm" placeholder="ค้นหาที่อยู่...">
+            </div>
+            <div class="col-12 col-sm-6 col-lg-2">
+                <label class="form-label small text-muted fw-bold mb-1">แสดงต่อหน้า</label>
+                <select id="pageSize" class="form-select form-select-sm">
+                    <option value="10" selected>10 รายการ</option>
+                    <option value="20">20 รายการ</option>
+                    <option value="50">50 รายการ</option>
+                </select>
+            </div>
+            <div class="col-12 col-lg-2">
+                <button type="button" id="searchBtn" class="btn btn-primary btn-sm w-100 fw-bold">
+                    <i class="fa-solid fa-magnifying-glass me-1"></i> ค้นหา
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle mb-0 text-nowrap" id="pickupTable">
+                <thead class="table-light text-center text-dark fw-bold small">
+                    <tr>
+                        <th class="py-3" style="width: 100px;">รหัสบิล</th>
+                        <th class="py-3" style="width: 220px;">ชื่อลูกค้า / ติดต่อ</th> 
+                        <th class="py-3">ที่อยู่</th>
+                        <th class="py-3" style="width: 160px;">รายละเอียดงาน</th> 
+                        <th class="py-3" style="width: 130px;">สถานะ</th>
+                        <th class="py-3" style="width: 140px;">ปิดงาน</th>
+                    </tr>
+                </thead>
+                <tbody id="pickupTableBody">
+                    {% for order in orders %}
+                    <tr class="order-row">
+                        <td class="text-center fw-bold text-primary align-middle col-bill">
+                            <small class="text-nowrap" style="font-size: 0.75rem;">{{ order.DisplayOrderID }}</small>
+                        </td>
+                        <td class="ps-3 col-cus">
+                            <div class="fw-bold text-dark cus-name">{{ order.CUSName }}</div>
+                            <div class="mt-1">
+                                <a href="tel:{{ order.CUSPhone }}" class="text-decoration-none small text-success me-2">
+                                    <i class="fa-solid fa-phone me-1"></i>{{ order.CUSPhone }}
+                                </a>
+                                {% if order.CUSLine %}
+                                <div class="small text-muted mt-1">
+                                    <i class="fa-brands fa-line text-success me-1"></i>ID: {{ order.CUSLine }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="ps-2 text-muted small col-address">
+                            {{ order.CUSAddress|default:"-" }}
+                        </td>
+
+                        <td class="text-center">
+                            <a href="{% url 'order_detail' order.Order_ID %}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold shadow-sm">
+                                <i class="fa-solid fa-magnifying-glass-chart me-1"></i> ดูรายละเอียด
+                            </a>
+                        </td>
+
+                        <td class="text-center">
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle p-1 w-100" style="font-size: 0.7rem;">
+                                {{ order.Status }}
+                            </span>
+                        </td>
+                        <td class="text-center pe-2">
+                            <button type="button" class="btn btn-success btn-sm w-100 rounded-pill fw-bold" 
+                                    onclick="confirmPickup('form-{{ order.Order_ID }}', '{{ order.CUSName }}')">
+                                <i class="fa-solid fa-check me-1"></i> รับผ้าแล้ว
+                            </button>
+                            
+                            <form id="form-{{ order.Order_ID }}" action="{% url 'update_order_status' order.Order_ID %}" method="POST" style="display: none;">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="contact_customer_list">
+                                <input type="hidden" name="new_status" value="ปิดงาน">
+                                <input type="hidden" name="payment_method" value="เงินสด">
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr id="emptyRow">
+                        <td colspan="6" class="text-center py-5 text-muted small">ไม่มีผ้าค้างส่งในระบบ</td>
+                    </tr>
+                    {% endfor %}
+                    <tr id="noMatchRow" style="display: none;">
+                        <td colspan="6" class="text-center py-5 text-muted small">ไม่พบข้อมูลที่ค้นหา...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card-footer bg-white border-top py-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
+        <span class="small text-muted mb-2 mb-md-0" id="pageInfo">แสดง 0 ถึง 0 จาก 0 รายการ</span>
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0 shadow-sm" id="paginationControls"></ul>
+        </nav>
+    </div>
+</div>
+
+<div class="modal fade" id="pickupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-light border-0 py-3">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="fa-solid fa-receipt text-success me-2"></i>รายละเอียดบิล <span id="modalBillId" class="text-success"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <h6 class="fw-bold mb-3 text-muted small text-uppercase">รายการผ้า (แยกตามประเภท):</h6>
+                <div id="modalItemList" class="mb-4"></div>
+                <hr class="border-dashed">
+                <div class="d-flex justify-content-between align-items-center mb-2 mt-3">
+                    <span class="text-muted fw-bold">จำนวนรวมสุทธิ:</span>
+                    <span class="fw-bold text-dark fs-5"><span id="modalTotalQty"></span> <small class="text-muted fw-normal" id="modalUnit"></small></span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted fw-bold">ยอดรายการสุทธิ:</span>
+                    <span class="fw-bold text-danger fs-4">฿<span id="modalTotalPrice"></span></span>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary w-100 rounded-pill py-2 fw-bold shadow-sm" data-bs-dismiss="modal">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+function showPickupModal(billId, items, qty, unit, price) {
+    document.getElementById('modalBillId').innerText = billId;
+    document.getElementById('modalTotalQty').innerText = qty;
+    document.getElementById('modalUnit').innerText = unit;
+    document.getElementById('modalTotalPrice').innerText = price;
+    
+    const itemListContainer = document.getElementById('modalItemList');
+    const itemArray = items.split(',');
+    
+    let htmlContent = '<div class="list-group list-group-flush border rounded-3 overflow-hidden">';
+    itemArray.forEach(item => {
+        if(item.trim()) {
+            htmlContent += `
+                <div class="list-group-item d-flex justify-content-between align-items-center py-2 bg-white">
+                    <span class="text-dark small"><i class="fa-solid fa-shirt text-success me-2" style="font-size: 0.8rem;"></i>${item.trim()}</span>
+                    <span class="badge bg-light text-success border border-success-subtle fw-bold">x 1 ${unit}</span>
+                </div>`;
+        }
+    });
+    htmlContent += '</div>';
+    
+    itemListContainer.innerHTML = htmlContent;
+    var myModal = new bootstrap.Modal(document.getElementById('pickupModal'));
+    myModal.show();
+}
+
+function confirmPickup(formId, customerName) {
+    Swal.fire({
+        title: 'ยืนยันการส่งคืนผ้า?',
+        text: `คุณ ${customerName} ตรวจสอบและรับผ้าเรียบร้อยแล้วใช่หรือไม่?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'ยืนยันปิดงาน',
+        cancelButtonText: 'ถอยกลับ',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'ปิดงานสำเร็จ!',
+                text: 'กำลังอัปเดตสถานะ...',
+                icon: 'success',
+                showConfirmButton: false,
+                timer: 800
+            });
+            setTimeout(() => {
+                document.getElementById(formId).submit();
+            }, 800);
+        }
+    })
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const fBill = document.getElementById('filterBill'), fCus = document.getElementById('filterCustomer'),
+          fAddr = document.getElementById('filterAddress'), pSize = document.getElementById('pageSize'),
+          searchBtn = document.getElementById('searchBtn'), 
+          pgControls = document.getElementById('paginationControls'), noMatch = document.getElementById('noMatchRow');
+    
+    const allRows = Array.from(document.querySelectorAll('#pickupTableBody tr.order-row'));
+    let currentPage = 1;
+
+    function renderTable() {
+        const bV = fBill.value.toLowerCase(), cV = fCus.value.toLowerCase(), aV = fAddr.value.toLowerCase(), size = parseInt(pSize.value);
+        const filtered = allRows.filter(row => {
+            return row.querySelector('.col-bill').textContent.toLowerCase().includes(bV) &&
+                   row.querySelector('.cus-name').textContent.toLowerCase().includes(cV) &&
+                   row.querySelector('.col-address').textContent.toLowerCase().includes(aV);
+        });
+
+        const total = filtered.length, totalP = Math.ceil(total / size) || 1;
+        if (currentPage > totalP) currentPage = totalP;
+        allRows.forEach(r => r.style.display = 'none');
+        filtered.slice((currentPage - 1) * size, currentPage * size).forEach(r => r.style.display = '');
+
+        noMatch.style.display = (total === 0 && allRows.length > 0) ? '' : 'none';
+        document.getElementById('pageInfo').textContent = `แสดงที่ ${total > 0 ? (currentPage - 1) * size + 1 : 0} ถึง ${Math.min(currentPage * size, total)} จากทั้งหมด ${total} รายการ`;
+        
+        pgControls.innerHTML = '';
+        const addBtn = (lbl, target, active = false, dis = false) => {
+            const li = document.createElement('li');
+            li.className = `page-item ${active ? 'active' : ''} ${dis ? 'disabled' : ''}`;
+            li.innerHTML = `<a class="page-link shadow-none" href="javascript:void(0);">${lbl}</a>`;
+            if (!dis) li.onclick = () => { currentPage = target; renderTable(); window.scrollTo({top: 0, behavior: 'smooth'}); };
+            pgControls.appendChild(li);
+        };
+        addBtn('ก่อนหน้า', currentPage - 1, false, currentPage === 1);
+        for (let i = 1; i <= totalP; i++) addBtn(i, i, currentPage === i);
+        addBtn('ถัดไป', currentPage + 1, false, currentPage === totalP || totalP === 0);
+    }
+
+    searchBtn.addEventListener('click', () => { currentPage = 1; renderTable(); });
+    pSize.addEventListener('change', () => { currentPage = 1; renderTable(); });
+    
+    renderTable();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-semibold text-dark">
+        <i class="fa-solid fa-clipboard-user text-primary me-2"></i> มอบหมายงาน (Task Assignment)
+    </h3>
+</div>
+
+<div class="alert alert-info border-0 shadow-sm mb-4">
+    <i class="fa-solid fa-circle-info me-2"></i> หน้านี้จะแสดงออเดอร์สถานะ <span class="fw-bold">"รอดำเนินการ"</span> เมื่อกดมอบหมายงานแล้ว บิลจะถูกย้ายไปยังสถานะ <span class="fw-bold text-primary">"กำลังดำเนินการ"</span> ในหน้าตะกร้างานซัก
+</div>
+
+<div class="card shadow-sm border-0 mb-5 rounded-4 overflow-hidden">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+        <div>
+            <i class="fas fa-inbox text-warning me-1"></i> <span class="fw-bold text-dark">รายการรอมอบหมายงาน</span>
+        </div>
+    </div>
+    
+    <div class="card-body p-0">
+        <div class="bg-light p-3 border-bottom">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-sm-6 col-lg-2">
+                    <label class="form-label small text-muted fw-bold mb-1">ค้นหารหัสบิล</label>
+                    <input type="text" id="filterBill" class="form-control form-control-sm" placeholder="เช่น LD-00001">
+                </div>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <label class="form-label small text-muted fw-bold mb-1">ค้นหาชื่อลูกค้า / เบอร์โทร</label>
+                    <input type="text" id="filterCustomer" class="form-control form-control-sm" placeholder="ชื่อ หรือ เบอร์โทร">
+                </div>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <label class="form-label small text-muted fw-bold mb-1">ค้นหาวันที่รับงาน</label>
+                    <input type="date" id="filterDate" class="form-control form-control-sm">
+                </div>
+                <div class="col-12 col-sm-6 col-lg-2">
+                    <label class="form-label small text-muted fw-bold mb-1">แสดงผลต่อหน้า</label>
+                    <select id="pageSize" class="form-select form-select-sm">
+                        <option value="10" selected>10 รายการ</option>
+                        <option value="20">20 รายการ</option>
+                        <option value="50">50 รายการ</option>
+                    </select>
+                </div>
+                <div class="col-12 col-lg-2">
+                    <button type="button" id="searchBtn" class="btn btn-primary btn-sm w-100 fw-bold">
+                        <i class="fa-solid fa-magnifying-glass me-1"></i> ค้นหา
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-nowrap">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4 py-3">รหัสบิล</th>
+                        <th class="py-3">ข้อมูลลูกค้า</th>
+                        <th class="py-3">สถานะปัจจุบัน</th>
+                        <th class="py-3">เวลาที่รับงาน</th>
+                        <th class="pe-4 py-3 bg-primary bg-opacity-10 text-primary" style="width: 30%; min-width: 250px;">
+                            <i class="fa-solid fa-user-tag me-1"></i> เลือกพนักงานเพื่อมอบหมาย
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="orderTableBody">
+                    {% for order in orders %}
+                    <tr class="order-row" data-date="{{ order.Order_Date|date:'Y-m-d' }}">
+                        <td class="ps-4 py-3 col-bill">
+                            <a class="text-decoration-none fw-bold text-primary fs-5">
+                                {% if order.DisplayOrderID %}#{{ order.DisplayOrderID }}{% else %}LD-{{ order.Order_ID|stringformat:"05d" }}{% endif %}
+                            </a>
+                        </td>
+                        <td class="py-3 col-cus">
+                            <span class="fw-bold text-dark">{{ order.CUSName }}</span><br>
+                            <span class="text-muted small"><i class="fa-solid fa-phone me-1"></i>{{ order.CUSPhone }}</span>
+                        </td>
+                        <td class="py-3">
+                            {% if order.Status == 'รอดำเนินการ' %}
+                                <span class="badge bg-warning bg-opacity-10 text-dark border border-warning px-2 py-2">
+                                    <i class="fa-solid fa-clock me-1"></i> {{ order.Status }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-2">
+                                    {{ order.Status }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 text-muted small">{{ order.Order_Date|date:"d/m/Y H:i" }}</td>
+                        
+                        <td class="pe-4 py-3 bg-primary bg-opacity-10">
+                            <form action="{% url 'assign_task' order.Order_ID %}" method="POST" class="d-flex gap-2 m-0">
+                                {% csrf_token %}
+                                <select name="emp_id" class="form-select border-primary text-primary fw-bold" required>
+                                    <option value="" selected disabled>-- เลือกพนักงาน --</option>
+                                    {% for emp in employees %}
+                                        <option value="{{ emp.EMP_ID }}">{{ emp.EMPName }}</option>
+                                    {% endfor %}
+                                </select>
+                                
+                                <button type="submit" class="btn btn-primary fw-bold text-nowrap shadow-sm px-3">
+                                    <i class="fa-solid fa-user-check me-1"></i> มอบหมาย
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr id="emptyStateRow" class="order-row empty-row">
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-clipboard-check fs-1 mb-3 text-success opacity-25"></i>
+                            <p class="mb-0 fs-5">เยี่ยมมาก! มอบหมายงานครบทุกรายการเเล้ว</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr id="noMatchRow" style="display: none;">
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-magnifying-glass fs-1 mb-3 opacity-25"></i>
+                            <p class="mb-0 fs-5">ไม่พบข้อมูลที่ค้นหา</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="card-footer bg-white border-top py-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
+        <span class="small text-muted mb-2 mb-md-0" id="pageInfo">แสดง 0 ถึง 0 จาก 0 รายการ</span>
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0 shadow-sm" id="paginationControls">
+                </ul>
+        </nav>
+    </div>
+</div>
+<script src="{% static 'js/manage_orders.js' %}?v=2"></script>
+
+
+{% endblock %}

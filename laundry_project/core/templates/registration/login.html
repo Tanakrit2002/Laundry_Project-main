@@ -1,0 +1,305 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ | Laundry System</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #0f172a;
+            --muted: #64748b;
+            --border: rgba(255, 255, 255, 0.18);
+            --glass: rgba(255, 255, 255, 0.72);
+            --shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.20), transparent 32%),
+                radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.18), transparent 30%),
+                linear-gradient(135deg, #eef4ff 0%, #f8fbff 45%, #eef2f7 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before,
+        body::after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(10px);
+            z-index: 0;
+        }
+
+        body::before {
+            width: 320px;
+            height: 320px;
+            background: rgba(37, 99, 235, 0.10);
+            top: -80px;
+            left: -100px;
+        }
+
+        body::after {
+            width: 280px;
+            height: 280px;
+            background: rgba(14, 165, 233, 0.10);
+            bottom: -80px;
+            right: -80px;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 430px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .brand-badge {
+            width: 68px;
+            height: 68px;
+            margin: 0 auto 14px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary), #38bdf8);
+            color: #fff;
+            font-size: 1.5rem;
+            box-shadow: 0 12px 30px rgba(37, 99, 235, 0.28);
+        }
+
+        .brand-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-subtitle {
+            color: var(--muted);
+            font-size: 0.96rem;
+            margin: 0;
+        }
+
+        .login-card {
+            background: var(--glass);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .card-body {
+            padding: 34px 30px 30px;
+        }
+
+        .welcome-text {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .welcome-text h2 {
+            font-size: 1.45rem;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 6px;
+        }
+
+        .welcome-text p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .form-label {
+            font-size: 0.92rem;
+            font-weight: 500;
+            color: #334155;
+            margin-bottom: 8px;
+        }
+
+        .input-group.custom-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group.custom-group .input-group-text {
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid #dbe3ef;
+            border-right: 0;
+            border-radius: 16px 0 0 16px;
+            color: #64748b;
+            padding-left: 14px;
+            padding-right: 14px;
+        }
+
+        .input-group.custom-group .form-control {
+            border: 1px solid #dbe3ef;
+            border-left: 0;
+            border-radius: 0 16px 16px 0;
+            background: rgba(255, 255, 255, 0.88);
+            padding: 0.85rem 1rem;
+            font-size: 0.96rem;
+            color: #0f172a;
+        }
+
+        .input-group.custom-group .form-control::placeholder {
+            color: #94a3b8;
+        }
+
+        .input-group.custom-group .form-control:focus {
+            box-shadow: none;
+            background: #fff;
+        }
+
+        .input-group.custom-group:focus-within .input-group-text,
+        .input-group.custom-group:focus-within .form-control {
+            border-color: #93c5fd;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
+        }
+
+        .btn-login {
+            width: 100%;
+            border: 0;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--primary), #3b82f6);
+            color: #fff;
+            font-weight: 600;
+            padding: 0.9rem 1rem;
+            transition: all 0.22s ease;
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.20);
+        }
+
+        .btn-login:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            transform: translateY(-1px);
+            box-shadow: 0 16px 28px rgba(37, 99, 235, 0.25);
+            color: #fff;
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .error-box {
+            margin-top: 18px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(239, 68, 68, 0.10);
+            border: 1px solid rgba(239, 68, 68, 0.18);
+            color: #b91c1c;
+            font-size: 0.92rem;
+            text-align: center;
+        }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 18px;
+            color: #94a3b8;
+            font-size: 0.84rem;
+        }
+
+        @media (max-width: 576px) {
+            body {
+                padding: 16px;
+            }
+
+            .card-body {
+                padding: 28px 20px 22px;
+            }
+
+            .brand-title {
+                font-size: 1.7rem;
+            }
+
+            .login-card {
+                border-radius: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-wrapper">
+    <div class="brand">
+        <div class="brand-badge">
+            <i class="fa-solid fa-shirt"></i>
+        </div>
+        <div class="brand-title">Laundry System</div>
+        <p class="brand-subtitle">ระบบจัดการร้านซักรีด</p>
+    </div>
+
+    <div class="login-card">
+        <div class="card-body">
+            <div class="welcome-text">
+                <h2>ยินดีต้อนรับ</h2>
+                <p>เข้าสู่ระบบเพื่อจัดการออเดอร์ ลูกค้า และงานซักรีดทั้งหมด</p>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <label for="username" class="form-label">ชื่อผู้ใช้งาน</label>
+                <div class="input-group custom-group">
+                    <span class="input-group-text">
+                        <i class="fa-regular fa-user"></i>
+                    </span>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="กรอกชื่อผู้ใช้งาน" required autofocus>
+                </div>
+
+                <label for="password" class="form-label">รหัสผ่าน</label>
+                <div class="input-group custom-group">
+                    <span class="input-group-text">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="กรอกรหัสผ่าน" required>
+                </div>
+
+                <button type="submit" class="btn btn-login mt-2">
+                    <i class="fa-solid fa-right-to-bracket me-2"></i>เข้าสู่ระบบ
+                </button>
+            </form>
+
+            {% if form.errors %}
+            <div class="error-box">
+                <i class="fa-solid fa-circle-exclamation me-1"></i>
+                ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง
+            </div>
+            {% endif %}
+
+            <div class="footer-note">
+                Laundry System
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h3 class="mb-4 fw-semibold text-dark">แดชบอร์ด (ภาพรวมระบบ)</h3>
+
+    <div class="row mb-4 g-3">
+        <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-12">
+            <div class="card bg-primary text-white h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="fw-light mb-1">ออเดอร์รอชำระเงิน</div>
+                    <div class="fs-3 fw-semibold">{{ pending_count }} รายการ</div>
+                </div>
+                <div class="card-footer border-0 bg-primary bg-opacity-25">
+                    <a class="small text-white stretched-link text-decoration-none" href="{% url 'manage_orders' %}">ดูรายละเอียด</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-12">
+            <div class="card bg-warning text-dark h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="fw-light mb-1">กำลังดำเนินการ</div>
+                    <div class="fs-3 fw-semibold">{{ processing_count }} รายการ</div>
+                </div>
+                <div class="card-footer border-0 bg-warning bg-opacity-25">
+                    <a class="small text-dark stretched-link text-decoration-none" href="{% url 'laundry_queue' %}">ดูรายละเอียด</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-12">
+            <div class="card bg-success text-white h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="fw-light mb-1">ซักเสร็จสิ้น / รอรับคืน</div>
+                    <div class="fs-3 fw-semibold">{{ done_count }} รายการ</div>
+                </div>
+                <div class="card-footer border-0 bg-success bg-opacity-25">
+                    <a class="small text-white stretched-link text-decoration-none" href="{% url 'contact_customer_list' %}">ดูรายละเอียด</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-12">
+            <div class="card bg-danger text-white h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="fw-light mb-1">รายได้วันนี้</div>
+                    <div class="fs-3 fw-semibold">฿ {{ today_revenue|floatformat:2 }}</div>
+                </div>
+                <div class="card-footer border-0 bg-danger bg-opacity-25">
+                    <a class="small text-white stretched-link text-decoration-none" href="{% url 'completed_orders_list' %}">ดูประวัติงานที่เสร็จสิ้น</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4 g-3">
+        <div class="col-xl-6 col-lg-6 col-12">
+            <div class="card shadow-sm border-0 mb-4 h-100">
+                <div class="card-header bg-white py-3">
+                    <i class="fas fa-chart-area text-primary me-1"></i> ยอดการรับงาน (7 วันล่าสุด)
+                </div>
+                <div class="card-body rounded-bottom">
+                    <div style="position: relative; height: 280px; width: 100%;">
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6 col-lg-6 col-12">
+            <div class="card shadow-sm border-0 mb-4 h-100">
+                <div class="card-header bg-white py-3">
+                    <i class="fas fa-chart-pie text-primary me-1"></i> สถิติบริการยอดนิยม
+                </div>
+                <div class="card-body rounded-bottom d-flex justify-content-center">
+                    <div style="position: relative; height: 280px; width: 100%; display: flex; justify-content: center;">
+                        <canvas id="serviceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="mb-3 fw-semibold text-dark">
+        <i class="fas fa-table text-primary me-2"></i>รายการออเดอร์ล่าสุด
+    </h5>
+
+    <div class="card shadow-sm border-0 mb-3 bg-light rounded-3">
+        <div class="card-body p-3">
+            <form method="GET" class="row g-2 align-items-end">
+                <div class="col-12 col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">รหัสบิล</label>
+                    <input type="text" name="search_id" class="form-control form-control-sm" placeholder="เลขบิล..." value="{{ request.GET.search_id }}">
+                </div>
+
+                <div class="col-12 col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">ชื่อลูกค้า</label>
+                    <input type="text" name="search_name" class="form-control form-control-sm" placeholder="ชื่อลูกค้า..." value="{{ request.GET.search_name }}">
+                </div>
+
+                <div class="col-12 col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">การชำระเงิน</label>
+                    <select name="search_pay" class="form-select form-select-sm">
+                        <option value="">ทั้งหมด</option>
+                        <option value="รอชำระเงิน" {% if request.GET.search_pay == 'รอชำระเงิน' %}selected{% endif %}>รอชำระเงิน</option>
+                        <option value="ชำระเงินแล้ว" {% if request.GET.search_pay == 'ชำระเงินแล้ว' %}selected{% endif %}>ชำระเงินแล้ว</option>
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">สถานะงานซัก</label>
+                    <select name="search_status" class="form-select form-select-sm">
+                        <option value="">ทั้งหมด</option>
+                        <option value="รอพนักงานรับงาน" {% if request.GET.search_status == 'รอพนักงานรับงาน' %}selected{% endif %}>รอพนักงานรับงาน</option>
+                        <option value="รอดำเนินการ" {% if request.GET.search_status == 'รอดำเนินการ' %}selected{% endif %}>รอดำเนินการ</option>
+                        <option value="กำลังดำเนินการ" {% if request.GET.search_status == 'กำลังดำเนินการ' %}selected{% endif %}>กำลังดำเนินการ</option>
+                        <option value="ซักเสร็จสิ้น / รอรับคืน" {% if request.GET.search_status == 'ซักเสร็จสิ้น / รอรับคืน' %}selected{% endif %}>ซักเสร็จสิ้น / รอรับคืน</option>
+                        <option value="งานเสร็จสิ้น/ติดต่อรับผ้า" {% if request.GET.search_status == 'งานเสร็จสิ้น/ติดต่อรับผ้า' %}selected{% endif %}>งานเสร็จสิ้น/ติดต่อรับผ้า</option>
+                        <option value="ปิดงานแล้ว" {% if request.GET.search_status == 'ปิดงานแล้ว' %}selected{% endif %}>ปิดงานแล้ว</option>
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-2">
+                    <label class="form-label small fw-bold text-muted mb-1">วันที่รับงาน</label>
+                    <input type="date" name="search_date" class="form-control form-control-sm" value="{{ request.GET.search_date }}">
+                </div>
+
+                <div class="col-12 col-md-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold">
+                        <i class="fa-solid fa-magnifying-glass me-1"></i> ค้นหา
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover border-bottom mb-0 text-nowrap">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4 py-3">รหัสบิล</th>
+                            <th class="py-3">ชื่อลูกค้า</th>
+                            <th class="py-3 text-center">การชำระเงิน</th>
+                            <th class="py-3">สถานะงานซัก</th>
+                            <th class="py-3 text-end">ราคารวม</th>
+                            <th class="py-3 text-center">วันที่รับงาน</th>
+                            <th class="text-center pe-4 py-3">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td class="ps-4 py-3 align-middle fw-medium text-primary">{{ order.DisplayOrderID }}</td>
+                        <td class="py-3 align-middle">{{ order.CUSName }}</td>
+
+                        <td class="py-3 align-middle text-center">
+                            {% if order.PaymentStatus == 'รอชำระเงิน' %}
+                                <span class="badge bg-danger px-3 py-2 fw-bold shadow-sm">รอชำระเงิน</span>
+                            {% else %}
+                                <span class="badge bg-success px-3 py-2 fw-bold shadow-sm">ชำระแล้ว</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="py-3 align-middle">
+                            {% if order.slowest_status == 'รอชำระเงิน' %}
+                                <span class="badge bg-danger px-3 py-2 fw-bold shadow-sm">รอชำระเงิน</span>
+                            {% elif order.slowest_status == 'รอพนักงานรับงาน' or order.slowest_status == 'รอดำเนินการ' %}
+                                <span class="badge bg-warning text-dark px-3 py-2 fw-bold shadow-sm">
+                                    {% if order.slowest_status == 'รอพนักงานรับงาน' %}
+                                        รอพนักงานรับงาน
+                                    {% else %}
+                                        รอดำเนินการ
+                                    {% endif %}
+                                </span>
+                            {% elif order.slowest_status == 'ชำระเงินแล้ว' or order.slowest_status == 'กำลังดำเนินการ' %}
+                                <span class="badge bg-primary text-white px-3 py-2 fw-bold shadow-sm">
+                                    {% if order.slowest_status == 'ชำระเงินแล้ว' %}
+                                        ชำระเงินแล้ว
+                                    {% else %}
+                                        กำลังดำเนินการ
+                                    {% endif %}
+                                </span>
+                            {% elif order.slowest_status == 'ซักเสร็จสิ้น / รอรับคืน' or order.slowest_status == 'งานเสร็จสิ้น/ติดต่อรับผ้า' %}
+                                <span class="badge text-dark px-3 py-2 fw-bold shadow-sm" style="background-color: #9ee6b3;">
+                                    {{ order.slowest_status }}
+                                </span>
+                            {% elif order.slowest_status == 'ลูกค้ารับผ้าเรียบร้อย' or order.slowest_status == 'ปิดงาน' or order.slowest_status == 'ปิดงานแล้ว' %}
+                                <span class="badge text-white px-3 py-2 fw-bold shadow-sm" style="background-color: #198754;">
+                                    ปิดงานแล้ว
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary px-3 py-2 fw-bold shadow-sm">{{ order.slowest_status }}</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="py-3 fw-semibold text-dark align-middle text-end pe-3">{{ order.Totalprice|floatformat:2 }} ฿</td>
+                        <td class="py-3 text-muted small align-middle text-center">{{ order.Order_Date|date:"d/m/Y H:i" }}</td>
+                        <td class="text-center align-middle pe-4">
+                            <a href="{% url 'order_detail' order.Order_ID %}" class="btn btn-sm text-primary bg-primary bg-opacity-10 px-3 py-1 rounded-pill fw-medium">ดูรายละเอียด</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">ไม่พบข้อมูลออเดอร์</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-5 px-1">
+        <div class="small text-muted fw-medium">
+            แสดงรายการที่ 1 ถึง {{ orders|length }} รายการ (หน้าละ 10 รายการ)
+        </div>
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0 shadow-sm">
+                <li class="page-item disabled"><a class="page-link" href="#">ก่อนหน้า</a></li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item disabled"><a class="page-link" href="#">ถัดไป</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const labelsWeekly = {{ labels_weekly|safe }};
+        const dataWeekly = {{ data_weekly|safe }};
+        const ctxWeekly = document.getElementById('weeklyChart').getContext('2d');
+
+        new Chart(ctxWeekly, {
+            type: 'line',
+            data: {
+                labels: labelsWeekly,
+                datasets: [{
+                    label: 'ออเดอร์',
+                    data: dataWeekly,
+                    borderColor: '#0d6efd',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true
+            }
+        });
+
+        const labelsServices = {{ labels_services|safe }};
+        const dataServices = {{ data_services|safe }};
+        const ctxService = document.getElementById('serviceChart').getContext('2d');
+
+        new Chart(ctxService, {
+            type: 'doughnut',
+            data: {
+                labels: labelsServices,
+                datasets: [{
+                    data: dataServices,
+                    backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545']
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true
+            }
+        });
+    </script>
+{% endblock %}

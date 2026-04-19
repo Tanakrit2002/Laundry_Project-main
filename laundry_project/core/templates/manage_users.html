@@ -1,0 +1,555 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* 🚨 บังคับสีตัวหนังสือแท็บให้ชัดเจนตลอดเวลา 🚨 */
+    .nav-tabs .nav-link {
+        color: #6c757d !important; /* สีเทาเข้มสำหรับแท็บที่ไม่ได้เลือก */
+        border: 1px solid transparent;
+    }
+    .nav-tabs .nav-link.active {
+        color: #0d6efd !important; /* สีน้ำเงินชัดเจนสำหรับแท็บที่เลือก */
+        background-color: #fff !important;
+        border-color: #dee2e6 #dee2e6 #fff !important;
+    }
+    .nav-tabs .nav-link:hover {
+        color: #495057 !important;
+        background-color: #f8f9fa;
+    }
+    .w-20px { width: 20px; }
+    
+    /* สไตล์สำหรับ Read-only Checkbox ใน SweetAlert */
+    .view-perm-item {
+        padding: 8px 12px;
+        border-radius: 8px;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        background: #f8f9fa;
+    }
+    .perm-icon {
+        font-size: 1.1rem;
+        width: 25px;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-semibold text-dark">
+        <i class="fa-solid fa-users-gear text-primary me-2"></i> ตั้งค่าผู้ใช้งานระบบ
+    </h3>
+</div>
+
+<ul class="nav nav-tabs mb-4" id="userManagementTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold px-4" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
+            <i class="fa-solid fa-user me-2"></i> ผู้ใช้งาน (Users)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold px-4" id="roles-tab" data-bs-toggle="tab" data-bs-target="#roles" type="button" role="tab">
+            <i class="fa-solid fa-shield-halved me-2"></i> กลุ่มผู้ใช้งานและสิทธิ์ (Roles)
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="userManagementTabsContent">
+    
+    <div class="tab-pane fade show active" id="users" role="tabpanel" tabindex="0">
+        <div class="d-flex justify-content-end mb-3">
+            <button type="button" class="btn btn-primary rounded-pill shadow-sm px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                <i class="fa-solid fa-plus me-1"></i> เพิ่มผู้ใช้งาน
+            </button>
+        </div>
+
+        <div class="bg-white p-3 border shadow-sm mb-3 rounded-4">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-md-3">
+                    <label class="form-label small text-muted fw-bold mb-1">ชื่อ-นามสกุล</label>
+                    <input type="text" id="filterEmpName" class="form-control form-control-sm" placeholder="ค้นหาชื่อ...">
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label small text-muted fw-bold mb-1">Username</label>
+                    <input type="text" id="filterUsername" class="form-control form-control-sm" placeholder="ค้นหา Username...">
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label small text-muted fw-bold mb-1">ตำแหน่ง / สิทธิ์</label>
+                    <select id="filterRole" class="form-select form-select-sm">
+                        <option value="">ทั้งหมด</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Staff">Staff</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label small text-muted fw-bold mb-1">แสดงผล</label>
+                    <select id="pageSizeUsers" class="form-select form-select-sm">
+                        <option value="10" selected>10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-1">
+                    <button type="button" id="searchUsersBtn" class="btn btn-primary btn-sm w-100 fw-bold">
+                        <i class="fa-solid fa-magnifying-glass"></i> ค้นหา
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-nowrap" id="usersTable">
+                        <thead class="table-light text-center text-dark fw-bold small">
+                            <tr>
+                                <th class="py-3">ชื่อ-นามสกุล</th>
+                                <th class="py-3">Username (เข้าสู่ระบบ)</th>
+                                <th class="py-3">ล็อคอินล่าสุดเมื่อ</th>
+                                <th class="py-3">ตำแหน่ง / สิทธิ์</th>
+                                <th class="py-3" style="width: 150px;">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            {% for emp in employees %}
+                            <tr class="user-row" 
+                                data-name="{{ emp.EMPName }}" 
+                                data-username="{{ emp.user.username }}" 
+                                data-role="{% if emp.Role|stringformat:'s' == 'Admin' or emp.Role.RoleName == 'Admin' %}Admin{% else %}Staff{% endif %}">
+                                <td class="ps-4 fw-bold text-dark">{{ emp.EMPName }}</td>
+                                <td class="text-center text-secondary">{{ emp.user.username }}</td>
+                                <td class="text-center text-muted small">
+                                    {% if emp.user.last_login %}
+                                        {{ emp.user.last_login|date:"d/m/Y H:i" }} น.
+                                    {% else %}
+                                        <span class="text-black-50">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if emp.Role|stringformat:"s" == 'Admin' or emp.Role.RoleName == 'Admin' %}
+                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-3 py-2">Admin</span>
+                                    {% else %}
+                                        <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle px-3 py-2">Staff</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-outline-warning btn-sm border-0 me-1" 
+                                        onclick="openEditUserModal('{{ emp.pk }}', '{{ emp.EMPName|escapejs }}', '{{ emp.user.username|escapejs }}', '{{ emp.Role|default:"Staff" }}')">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+
+                                    <form method="POST" action="{% url 'manage_users' %}" class="d-inline" id="deleteForm-{{ emp.pk }}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="emp_id" value="{{ emp.pk }}">
+                                        <input type="hidden" name="delete_user" value="1">
+                                        {% if request.user.username != emp.user.username %}
+                                            <button type="button" class="btn btn-outline-danger btn-sm border-0" onclick="confirmDeleteUser('{{ emp.pk }}', '{{ emp.EMPName|escapejs }}')">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        {% else %}
+                                            <span class="text-muted small">(คุณ)</span>
+                                        {% endif %}
+                                    </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr class="empty-row">
+                                <td colspan="5" class="text-center py-5 text-muted">ยังไม่มีพนักงานในระบบ</td>
+                            </tr>
+                            {% endfor %}
+                            <tr id="noMatchUsers" style="display: none;">
+                                <td colspan="5" class="text-center py-5 text-muted">ไม่พบข้อมูลที่ค้นหา...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-top py-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
+                <span class="small text-muted mb-2 mb-md-0" id="pageInfoUsers">แสดง 0 ถึง 0 จาก 0 รายการ</span>
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-sm mb-0 shadow-sm" id="paginationUsers"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="roles" role="tabpanel" tabindex="0">
+        <div class="bg-white p-3 border shadow-sm mb-3 rounded-4">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label small text-muted fw-bold mb-1">ชื่อกลุ่มผู้ใช้งาน (Role)</label>
+                    <input type="text" id="filterRoleName" class="form-control form-control-sm" placeholder="ค้นหาชื่อสิทธิ์...">
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label small text-muted fw-bold mb-1">แสดงผล</label>
+                    <select id="pageSizeRoles" class="form-select form-select-sm">
+                        <option value="10" selected>10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <button type="button" id="searchRolesBtn" class="btn btn-primary btn-sm w-100 fw-bold">
+                        <i class="fa-solid fa-magnifying-glass"></i> ค้นหา
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-nowrap" id="rolesTable">
+                        <thead class="table-light text-center text-dark fw-bold small">
+                            <tr>
+                                <th class="py-3 text-start ps-4">ชื่อกลุ่มผู้ใช้งาน (Role)</th>
+                                <th class="py-3 text-center" style="width: 300px;">จัดการสิทธิ์เมนู</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roleTableBody">
+                            {% for role in roles %}
+                            <tr class="role-row" data-role="{{ role.RoleName }}">
+                                <td class="ps-4 fw-bold text-dark">{{ role.RoleName }}</td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-outline-info btn-sm rounded-pill px-3 fw-bold me-1" 
+                                        onclick="viewPermissions('{{ role.RoleName|escapejs }}', '{{ role.Permissions|default:'' }}')">
+                                        <i class="fa-solid fa-magnifying-glass me-1"></i> ดูสิทธิ์
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" 
+                                        onclick="openEditRoleModal('{{ role.pk }}', '{{ role.RoleName|escapejs }}', '{{ role.Permissions|default:'' }}')">
+                                        <i class="fa-solid fa-user-shield me-1"></i> แก้ไขสิทธิ์
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr class="empty-row">
+                                <td colspan="2" class="text-center py-5 text-muted">ไม่พบข้อมูลกลุ่มผู้ใช้งาน</td>
+                            </tr>
+                            {% endfor %}
+                            <tr id="noMatchRoles" style="display: none;">
+                                <td colspan="2" class="text-center py-5 text-muted">ไม่พบข้อมูลที่ค้นหา...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-top py-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
+                <span class="small text-muted mb-2 mb-md-0" id="pageInfoRoles">แสดง 0 ถึง 0 จาก 0 รายการ</span>
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-sm mb-0 shadow-sm" id="paginationRoles"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-white border-0 py-3 pb-0">
+                <h4 class="modal-title fw-bold text-dark w-100 text-center">เพิ่มผู้ใช้งานใหม่</h4>
+            </div>
+            <form action="{% url 'manage_users' %}" method="POST" id="addUserForm">
+                {% csrf_token %}
+                <input type="hidden" name="add_user" value="1">
+                <div class="modal-body px-4 pb-2 pt-3">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold mb-1">ชื่อ-นามสกุล</label>
+                        <input type="text" name="first_name" class="form-control bg-white" placeholder="ชื่อ-นามสกุล" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold mb-1">ชื่อผู้ใช้ (Username)</label>
+                        <input type="text" name="username" class="form-control bg-white" placeholder="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold mb-1">รหัสผ่าน</label>
+                        <input type="password" name="password" class="form-control bg-white" placeholder="********" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold mb-1">สิทธิ์</label>
+                        <select name="role" class="form-select bg-white" required>
+                            <option value="Staff" selected>พนักงาน</option>
+                            <option value="Admin">ผู้ดูแลระบบ (Admin)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4 d-flex gap-2">
+                    <button type="button" class="btn btn-primary flex-grow-1 fw-bold rounded-3 py-2" onclick="confirmAddUser()">บันทึก</button>
+                    <button type="button" class="btn btn-light border text-dark flex-grow-1 fw-bold rounded-3 py-2" data-bs-dismiss="modal">ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-white border-0 py-3 pb-0">
+                <h4 class="modal-title fw-bold text-dark w-100 text-center">แก้ไขข้อมูลผู้ใช้งาน</h4>
+            </div>
+            <form action="{% url 'manage_users' %}" method="POST" id="editUserForm">
+                {% csrf_token %}
+                <input type="hidden" name="edit_user" value="1">
+                <input type="hidden" name="emp_id" id="edit_emp_id">
+                <div class="modal-body px-4 pb-2 pt-3">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold mb-1">ชื่อ-นามสกุล</label>
+                        <input type="text" name="first_name" id="edit_first_name" class="form-control bg-white" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold mb-1">ชื่อผู้ใช้ (Username) <span class="text-danger">*ไม่อนุญาตให้เปลี่ยน</span></label>
+                        <input type="text" id="edit_username" class="form-control bg-light text-muted" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold mb-1">รหัสผ่านใหม่ (ปล่อยว่างไว้ถ้าไม่เปลี่ยน)</label>
+                        <input type="password" name="password" id="edit_password" class="form-control bg-white" placeholder="********">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold mb-1">สิทธิ์</label>
+                        <select name="role" id="edit_role" class="form-select bg-white" required>
+                            <option value="Staff">พนักงาน</option>
+                            <option value="Admin">ผู้ดูแลระบบ (Admin)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4 d-flex gap-2">
+                    <button type="button" class="btn btn-warning flex-grow-1 fw-bold rounded-3 py-2 text-dark" onclick="confirmEditUser()">อัปเดตข้อมูล</button>
+                    <button type="button" class="btn btn-light border text-dark flex-grow-1 fw-bold rounded-3 py-2" data-bs-dismiss="modal">ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editRoleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-white border-0 py-3 pb-0">
+                <h4 class="modal-title fw-bold text-dark w-100 text-center">จัดการสิทธิ์: <span id="display_role_name" class="text-primary"></span></h4>
+            </div>
+            <form action="{% url 'manage_users' %}" method="POST" id="editRoleForm">
+                {% csrf_token %}
+                <input type="hidden" name="update_permissions" value="1">
+                <input type="hidden" name="role_id" id="edit_role_id">
+                <div class="modal-body px-4 pb-2 pt-3">
+                    <p class="text-muted small mb-3 text-center">เลือกเมนูที่ต้องการให้กลุ่มผู้ใช้งานนี้เข้าถึงได้</p>
+                    <div class="list-group">
+                        <label class="list-group-item d-flex gap-2 align-items-center">
+                            <input class="form-check-input flex-shrink-0" type="checkbox" name="permissions" value="dashboard">
+                            <span><i class="fa-solid fa-gauge-high text-muted me-2 w-20px text-center"></i> แดชบอร์ด</span>
+                        </label>
+                        <label class="list-group-item d-flex gap-2 align-items-center">
+                            <input class="form-check-input flex-shrink-0" type="checkbox" name="permissions" value="add_order">
+                            <span><i class="fa-solid fa-plus-circle text-muted me-2 w-20px text-center"></i> รับออเดอร์ใหม่</span>
+                        </label>
+                        <label class="list-group-item d-flex gap-2 align-items-center">
+                            <input class="form-check-input flex-shrink-0" type="checkbox" name="permissions" value="manage_orders">
+                            <span><i class="fa-solid fa-list-check text-muted me-2 w-20px text-center"></i> มอบหมายงาน</span>
+                        </label>
+                        <label class="list-group-item d-flex gap-2 align-items-center">
+                            <input class="form-check-input flex-shrink-0" type="checkbox" name="permissions" value="laundry_queue">
+                            <span><i class="fa-solid fa-basket-shopping text-muted me-2 w-20px text-center"></i> งานที่ต้องทำ</span>
+                        </label>
+                        <label class="list-group-item d-flex gap-2 align-items-center">
+                            <input class="form-check-input flex-shrink-0" type="checkbox" name="permissions" value="completed_orders">
+                            <span><i class="fa-solid fa-clock-rotate-left text-muted me-2 w-20px text-center"></i> ประวัติงานเสร็จสิ้น</span>
+                        </label>
+                        <label class="list-group-item d-flex gap-2 align-items-center">
+                            <input class="form-check-input flex-shrink-0" type="checkbox" name="permissions" value="system_settings">
+                            <span><i class="fa-solid fa-screwdriver-wrench text-muted me-2 w-20px text-center"></i> ตั้งค่าราคาและระบบ</span>
+                        </label>
+                        <label class="list-group-item d-flex gap-2 align-items-center">
+                            <input class="form-check-input flex-shrink-0" type="checkbox" name="permissions" value="manage_users">
+                            <span><i class="fa-solid fa-users-gear text-muted me-2 w-20px text-center"></i> ตั้งค่าผู้ใช้งาน</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4 d-flex gap-2 mt-2">
+                    <button type="button" class="btn btn-primary flex-grow-1 fw-bold rounded-3 py-2" onclick="confirmEditRole()">บันทึกสิทธิ์</button>
+                    <button type="button" class="btn btn-light border text-dark flex-grow-1 fw-bold rounded-3 py-2" data-bs-dismiss="modal">ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{% static 'js/manage_users.js' %}?v=2"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // -----------------------------------------
+    // Logic ค้นหาและ Pagination สำหรับแท็บ Users
+    // -----------------------------------------
+    const searchUsersBtn = document.getElementById('searchUsersBtn');
+    const filterEmpName = document.getElementById('filterEmpName');
+    const filterUsername = document.getElementById('filterUsername');
+    const filterRole = document.getElementById('filterRole');
+    const pageSizeUsers = document.getElementById('pageSizeUsers');
+    const paginationUsers = document.getElementById('paginationUsers');
+    const pageInfoUsers = document.getElementById('pageInfoUsers');
+    const userRows = document.querySelectorAll('#userTableBody .user-row');
+    const noMatchUsers = document.getElementById('noMatchUsers');
+
+    let currentUsersPage = 1;
+
+    function runSearchUsers() {
+        const valName = filterEmpName.value.toLowerCase().trim();
+        const valUser = filterUsername.value.toLowerCase().trim();
+        const valRole = filterRole.value.trim();
+        const size = parseInt(pageSizeUsers.value, 10) || 10;
+
+        let filtered = [];
+        userRows.forEach(row => {
+            const rName = (row.getAttribute('data-name') || '').toLowerCase();
+            const rUser = (row.getAttribute('data-username') || '').toLowerCase();
+            const rRole = row.getAttribute('data-role') || '';
+
+            let match = true;
+            if (valName && !rName.includes(valName)) match = false;
+            if (valUser && !rUser.includes(valUser)) match = false;
+            if (valRole && rRole !== valRole) match = false;
+
+            if (match) filtered.push(row);
+            row.style.display = 'none'; // ซ่อนทั้งหมดก่อน
+        });
+
+        const totalItems = filtered.length;
+        let totalPages = Math.ceil(totalItems / size) || 1;
+        if (currentUsersPage > totalPages) currentUsersPage = Math.max(1, totalPages);
+
+        const start = (currentUsersPage - 1) * size;
+        const end = start + size;
+        
+        filtered.slice(start, end).forEach(row => {
+            row.style.display = '';
+        });
+
+        if (noMatchUsers) {
+            noMatchUsers.style.display = (totalItems === 0 && userRows.length > 0) ? '' : 'none';
+        }
+
+        const dispStart = totalItems === 0 ? 0 : start + 1;
+        const dispEnd = Math.min(end, totalItems);
+        if (pageInfoUsers) pageInfoUsers.innerText = `แสดง ${dispStart} ถึง ${dispEnd} จาก ${totalItems} รายการ`;
+
+        renderPagination(totalPages, currentUsersPage, paginationUsers, (newPage) => {
+            currentUsersPage = newPage;
+            runSearchUsers();
+        });
+    }
+
+    // ลบการค้นหาอัตโนมัติออก ให้ค้นหาเฉพาะตอนกดปุ่ม "ค้นหา"
+    if (searchUsersBtn) searchUsersBtn.addEventListener('click', () => { currentUsersPage = 1; runSearchUsers(); });
+
+    // -----------------------------------------
+    // Logic ค้นหาและ Pagination สำหรับแท็บ Roles
+    // -----------------------------------------
+    const searchRolesBtn = document.getElementById('searchRolesBtn');
+    const filterRoleName = document.getElementById('filterRoleName');
+    const pageSizeRoles = document.getElementById('pageSizeRoles');
+    const paginationRoles = document.getElementById('paginationRoles');
+    const pageInfoRoles = document.getElementById('pageInfoRoles');
+    const roleRows = document.querySelectorAll('#roleTableBody .role-row');
+    const noMatchRoles = document.getElementById('noMatchRoles');
+
+    let currentRolesPage = 1;
+
+    function runSearchRoles() {
+        const valRoleName = filterRoleName.value.toLowerCase().trim();
+        const size = parseInt(pageSizeRoles.value, 10) || 10;
+
+        let filtered = [];
+        roleRows.forEach(row => {
+            const rRole = (row.getAttribute('data-role') || '').toLowerCase();
+
+            let match = true;
+            if (valRoleName && !rRole.includes(valRoleName)) match = false;
+
+            if (match) filtered.push(row);
+            row.style.display = 'none';
+        });
+
+        const totalItems = filtered.length;
+        let totalPages = Math.ceil(totalItems / size) || 1;
+        if (currentRolesPage > totalPages) currentRolesPage = Math.max(1, totalPages);
+
+        const start = (currentRolesPage - 1) * size;
+        const end = start + size;
+        
+        filtered.slice(start, end).forEach(row => {
+            row.style.display = '';
+        });
+
+        if (noMatchRoles) {
+            noMatchRoles.style.display = (totalItems === 0 && roleRows.length > 0) ? '' : 'none';
+        }
+
+        const dispStart = totalItems === 0 ? 0 : start + 1;
+        const dispEnd = Math.min(end, totalItems);
+        if (pageInfoRoles) pageInfoRoles.innerText = `แสดง ${dispStart} ถึง ${dispEnd} จาก ${totalItems} รายการ`;
+
+        renderPagination(totalPages, currentRolesPage, paginationRoles, (newPage) => {
+            currentRolesPage = newPage;
+            runSearchRoles();
+        });
+    }
+
+    // ลบการค้นหาอัตโนมัติออก ให้ค้นหาเฉพาะตอนกดปุ่ม "ค้นหา"
+    if (searchRolesBtn) searchRolesBtn.addEventListener('click', () => { currentRolesPage = 1; runSearchRoles(); });
+
+    // ฟังก์ชันสร้างปุ่มเปลี่ยนหน้า แบบบังคับให้โชว์ตลอดแม้มี 1 หน้า
+    function renderPagination(totalPages, currentPage, container, callback) {
+        if (!container) return;
+        container.innerHTML = '';
+        
+        // ให้แสดงผลเสมอแม้มีแค่ 1 หน้า
+        const safeTotalPages = Math.max(1, totalPages);
+
+        const liPrev = document.createElement('li');
+        liPrev.className = `page-item ${currentPage <= 1 ? 'disabled' : ''}`;
+        liPrev.innerHTML = `<a class="page-link" href="javascript:void(0);">ก่อนหน้า</a>`;
+        liPrev.onclick = (e) => { e.preventDefault(); if (currentPage > 1) callback(currentPage - 1); };
+        container.appendChild(liPrev);
+
+        for (let i = 1; i <= safeTotalPages; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${currentPage === i ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="javascript:void(0);">${i}</a>`;
+            li.onclick = (e) => { e.preventDefault(); callback(i); };
+            container.appendChild(li);
+        }
+
+        const liNext = document.createElement('li');
+        liNext.className = `page-item ${currentPage >= safeTotalPages ? 'disabled' : ''}`;
+        liNext.innerHTML = `<a class="page-link" href="javascript:void(0);">ถัดไป</a>`;
+        liNext.onclick = (e) => { e.preventDefault(); if (currentPage < safeTotalPages) callback(currentPage + 1); };
+        container.appendChild(liNext);
+    }
+
+    // โหลดครั้งแรก
+    runSearchUsers();
+    runSearchRoles();
+});
+</script>
+
+{% if messages %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    {% for message in messages %}
+        {% if 'เพิ่มผู้ใช้งานสำเร็จ' in message|stringformat:"s" %}
+        Swal.fire({
+            icon: 'success',
+            title: 'สร้างบัญชีเรียบร้อย',
+            text: 'เพิ่มผู้ใช้งานสำเร็จ',
+            confirmButtonText: 'ตกลง',
+            confirmButtonColor: '#0d6efd'
+        });
+        {% endif %}
+    {% endfor %}
+});
+</script>
+{% endif %}
+
+{% endblock %}

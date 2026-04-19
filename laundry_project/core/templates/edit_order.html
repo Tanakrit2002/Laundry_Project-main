@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
+
+<div class="d-flex align-items-center mb-4">
+    <a href="{% url 'add_order' %}" class="btn btn-outline-secondary me-3"><i class="fa-solid fa-arrow-left"></i> กลับ</a>
+    <h3 class="fw-semibold text-dark mb-0">แก้ไขออเดอร์ #{{ order.Order_ID|stringformat:"05d" }}</h3>
+</div>
+
+<form id="orderForm" method="POST">
+    {% csrf_token %}
+    <input type="hidden" name="cart_data" id="cartData">
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-warning bg-opacity-25 py-3">
+            <i class="fa-regular fa-user text-warning-emphasis me-1"></i> <span class="fw-bold text-dark">ข้อมูลลูกค้า</span>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label text-muted small">ลูกค้าที่เคยใช้บริการ</label>
+                    <select id="customerSelect" name="customer_id" placeholder="พิมพ์ค้นหาลูกค้า...">
+                        <option value="">-- ลูกค้า Walk-in / เพิ่มลูกค้าใหม่ด้านล่าง --</option>
+                        {% for cus in customers %}
+                            <option value="{{ cus.CUS_ID }}" {% if cus.CUS_ID == order.CUS.CUS_ID %}selected{% endif %}>
+                                {{ cus.CUSName }} (โทร. {{ cus.CUSPhone }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-warning bg-opacity-25 py-3">
+            <i class="fa-solid fa-list-check text-warning-emphasis me-1"></i> <span class="fw-bold text-dark">รายการบริการ (เพิ่มรายการใหม่ได้ที่นี่)</span>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-2 align-items-end mb-4">
+                <div class="col-12 col-md-3">
+                    <label class="form-label text-muted small">บริการ</label>
+                    <select class="form-select" id="serviceTypeSelect" onchange="updateFabricOptions()">
+                        <option value="">-- เลือกบริการ --</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label text-muted small">ชนิดผ้า</label>
+                    <select class="form-select" id="fabricSelect" onchange="updatePrice()">
+                        <option value="">-- เลือกชนิดผ้า --</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label text-muted small">ราคา (฿)</label>
+                    <input type="text" class="form-control bg-light text-primary fw-semibold text-center" id="priceDisplay" readonly value="0.00">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label text-muted small">หน่วย</label>
+                    <input type="text" class="form-control bg-light text-center fw-bold" id="unitSelect" name="unit_display" readonly value="-">
+                </div>
+                <div class="col-6 col-md-1">
+                    <label class="form-label text-muted small">จำนวน</label>
+                    <input type="number" class="form-control text-center" id="qtyInput" value="1" min="1">
+                </div>
+                <div class="col-6 col-md-1">
+                    <button type="button" class="btn btn-primary w-100 btn-add" onclick="addItem()">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover border" id="itemTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>รายการบริการ</th>
+                            <th class="text-center">ราคาต่อหน่วย</th>
+                            <th class="text-center">จำนวน</th>
+                            <th class="text-end">รวม (฿)</th>
+                            <th class="text-center" style="width: 60px;">ลบ</th> 
+                        </tr>
+                    </thead>
+                    <tbody id="cartBody">
+                        <tr id="emptyCartRow">
+                            <td colspan="5" class="text-center py-4 text-muted">ยังไม่มีรายการซักรีด</td> 
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                <h5 class="fw-bold mb-0 text-dark">ยอดรวมทั้งสิ้น:</h5>
+                <h2 class="text-primary fw-bold mb-0">฿ <span id="totalPrice">0.00</span></h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-5">
+        <button type="submit" class="btn btn-warning px-4 py-2 fw-semibold text-dark">
+            <i class="fa-solid fa-save me-2"></i> บันทึกการแก้ไขออเดอร์
+        </button>
+    </div>
+</form>
+
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> 
+
+<script>
+    new TomSelect("#customerSelect", { create: false, sortField: { field: "text", direction: "asc" } });
+
+    // 🚨 เพิ่มฟิลด์ unit เข้ามาให้คุยกับ order.js ตัวใหม่รู้เรื่อง
+    const rawServices = [
+        {% for srv in services %}
+        { 
+            id: {{ srv.Service_ID }}, 
+            type: "{{ srv.ServiceType|escapejs }}", 
+            fabric: "{{ srv.FabricType|escapejs }}", 
+            price: parseFloat("{{ srv.PriceService|default:0 }}"),
+            unit: "{% if srv.Unit %}{{ srv.Unit|escapejs }}{% else %}ชิ้น{% endif %}"
+        },
+        {% endfor %}
+    ];
+
+    const serviceTypeSelect = document.getElementById('serviceTypeSelect');
+    const uniqueTypes = [...new Set(rawServices.map(item => item.type))];
+    uniqueTypes.forEach(type => {
+        let opt = document.createElement('option');
+        opt.value = type; opt.textContent = type;
+        serviceTypeSelect.appendChild(opt);
+    });
+</script>
+
+<script src="{% static 'js/order.js' %}?v=3"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const initialCart = {{ initial_cart_json|safe|default:"[]" }};
+        
+        if (initialCart.length > 0) {
+            initialCart.forEach(item => {
+                cartArray.push({
+                    service_id: item.service_id.toString(),
+                    name: item.name,
+                    qty: parseFloat(item.qty),
+                    unit: item.unit,
+                    price: parseFloat(item.price)
+                });
+            });
+            renderCart(); 
+        }
+
+        document.getElementById('orderForm').addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            
+            const cartData = document.getElementById('cartData').value;
+            
+            if (!cartData || cartData === '[]') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ตะกร้าว่างเปล่า!',
+                    text: 'กรุณาเพิ่มรายการซักรีดอย่างน้อย 1 รายการก่อนบันทึกแก้ไข',
+                    confirmButtonColor: '#dc3545'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'บันทึกสำเร็จ!',
+                text: 'อัปเดตรายการออเดอร์เรียบร้อย',
+                icon: 'success',
+                showConfirmButton: false,
+                timer: 1500 
+            }).then(() => {
+                HTMLFormElement.prototype.submit.call(document.getElementById('orderForm'));
+            });
+        });
+    });
+</script>
+{% endblock %}
